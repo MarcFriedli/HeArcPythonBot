@@ -1,3 +1,6 @@
+"""
+Bot pour discord. Basé sur le modèle de Yoan Blanc (https://tutorials.botsfloor.com/a-discord-bot-with-asyncio-359a2c99e256)
+"""
 import asyncio
 import json
 import aiohttp
