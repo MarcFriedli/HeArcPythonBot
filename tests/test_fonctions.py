@@ -7,6 +7,50 @@ import aiohttp
 
 
 @pytest.mark.asyncio
+async def test_if_get_anime_after_search_with_inexisting_types_raise_an_exception():
+    async with aiohttp.ClientSession() as session:
+        try:
+            await  anime_functions.get_anime_after_search(session, "totoro")
+        except anime_functions.TypeNotFound:
+            assert True
+
+
+@pytest.mark.asyncio
+async def test_if_get_anime_after_search_with_too_much_types_found_nothing():
+    async with aiohttp.ClientSession() as session:
+        reply = await anime_functions.get_anime_after_search(session, "Comédie", "Horreur", "Romance", "Action", "Sport")
+    assert reply == "Il n'y a aucun anime qui correspond à votre recherche."
+
+
+@pytest.mark.skip
+@pytest.mark.asyncio
+async def test_if_get_anime_after_search_work():
+    async with aiohttp.ClientSession() as session:
+        reply = await anime_functions.get_anime_after_search(session, "Amour et amitié", "Horreur", "Ecchi")
+    assert reply == "Les animés suivants correspondent à votre recherche : Bokusatsu Tenshi Dokuro-chan"
+
+
+@pytest.mark.asyncio
+async def test_if_is_type_existing_found_existings_types():
+    async with aiohttp.ClientSession() as session:
+        soup = await anime_functions.make_soup(session, anime_functions.WEB_SITE + 'anime')
+        try:
+            anime_functions.is_type_existing(soup, "Comédie", "Amour et amitié")
+        except anime_functions.TypeNotFound:
+            return False
+
+
+@pytest.mark.asyncio
+async def test_if_is_type_raise_a_TypeNotFound_exeption_with_an_inexisting_type():
+    async with aiohttp.ClientSession() as session:
+        soup = await anime_functions.make_soup(session, anime_functions.WEB_SITE + 'anime')
+        try:
+            anime_functions.is_type_existing(soup, "Comédie", "Horrreur")
+        except anime_functions.TypeNotFound:
+            assert True
+
+
+@pytest.mark.asyncio
 async def test_if_get_resume_work():
     """Vérification que le résumé soit le bon..."""
     async with aiohttp.ClientSession() as session:
@@ -20,6 +64,14 @@ async def test_if_get_resume_work():
                                                             "cachent elles-mêmes un très lourd secret à ce sujet…"
 
 
+@pytest.mark.asyncio
+async def test_if_get_anime_type_work():
+    """Vérification que lorsqu'on passe un paramètre, on trouve les bons genres"""
+    async with aiohttp.ClientSession() as session:
+        reply = await anime_functions.get_anime_types("anime/abarenbou-rikishi-matsutarou", session)
+        assert reply.lower() == "sport"
+
+
 # TODO : simplifier ce truc...
 @pytest.mark.asyncio
 async def test_if_get_last_node_return_the_right_node():
@@ -28,4 +80,6 @@ async def test_if_get_last_node_return_the_right_node():
         for anime_link in soup.find_all('a'):
             for anime_title in anime_link.find_all(attrs='anime-titre'):
                 if "Higurashi no Naku Koro ni" == anime_title.string:
-                    assert await anime_functions.get_last_node(anime_link, 'anime-author') == 'Seventh Expansion'
+                    reply = await anime_functions.get_last_node(anime_link.select('.anime-author td'))
+                    print(reply)
+                    assert reply == 'Seventh Expansion'

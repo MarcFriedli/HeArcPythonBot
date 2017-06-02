@@ -20,7 +20,7 @@ async def test_if_help_command_with_all_case_work():
 async def test_if_info_command_work():
     execute_request_with_info_reply = await  anime_functions.execute_request('info', 'Higurashi no Naku Koro ni')
     async with aiohttp.ClientSession() as session:
-        get_information_reply = await anime_functions.get_informations(session, ['Higurashi no Naku Koro ni'])
+        get_information_reply = await anime_functions.get_informations(session, 'Higurashi no Naku Koro ni')
     assert execute_request_with_info_reply == get_information_reply
 
 @pytest.mark.asyncio
@@ -32,17 +32,19 @@ async def test_if_espisod_command_work():
 
 @pytest.mark.asyncio
 async def test_if_search_command_work():
-    try:
-        assert not await anime_functions.execute_request('search', 'Horreur', 'Comédie')
-    except NotImplementedError:
-        assert True
+    execute_request_with_search_reply = await anime_functions.execute_request('search', 'Horreur')
+    async with aiohttp.ClientSession() as session:
+        get_search_reply = await anime_functions.get_anime_after_search(session, 'Horreur')
+    assert execute_request_with_search_reply == get_search_reply
 
 
 @pytest.mark.asyncio
 async def test_if_an_unknown_command_doesnt_work():
-    assert not await anime_functions.execute_request('blaaaaarg')
+    reply = await anime_functions.execute_request('blaaaaarg')
+    assert reply == "Instruction inconnue. tapez 'help' pour la liste des instructions."
 
 
 @pytest.mark.asyncio
 async def test_if_an_unknown_anime_is_not_found():
-    assert not await anime_functions.execute_request('info', 'blaaaaarg')
+    reply = await anime_functions.execute_request('info', 'blaaaaarg')
+    assert reply == "L'anime est introuvable."
