@@ -46,6 +46,8 @@ async def execute_request(requ, *params):
             return "Cet animé est déjà licencié. Soutenez-le en l'achetant."
         except TypeNotFound:
             return "Genre inconnu."
+        except IndexError:
+            return "Cet épisode n'existe pas."
 
 async def get_informations(session, anime_name):
     """
@@ -56,19 +58,19 @@ async def get_informations(session, anime_name):
     #print(soup.getText)
     for anime_link in soup.find_all('a'):
         for anime_title in anime_link.find_all(attrs='anime-titre'):
-            if anime_name == anime_title.string:
-                episods = []
+            if anime_name.lower() == anime_title.string.lower():
+                episodes = []
                 author = await get_last_node(anime_link.select('.anime-author td'))
                 resume = await get_resume(anime_link.get('href'), session)
                 studio = await get_last_node(anime_link.select('.anime-studio td'))
-                for episod_ref in anime_link.select('.anime-count span'):
-                    episods.append(episod_ref.string)
+                for episode_ref in anime_link.select('.anime-count span'):
+                    episodes.append(episode_ref.string)
                 year = anime_link.find(attrs='annee').string
                 anime_types = await get_anime_types(anime_link.get('href'), session)
                 return f"""Anime "{anime_name}" de {author} par {studio} en {year}.
 Genres : {anime_types}.
 Résumé : "{resume}" 
-Cet anime est composé de {episods[0]} épisodes,{episods[1]} OAV et {episods[2]} films."""
+Cet anime est composé de {episodes[0]} épisodes,{episodes[1]} OAV et {episodes[2]} films."""
     raise AnimeNotFound
 
 async def get_resume(url, session):
@@ -86,16 +88,47 @@ async def get_anime_types(link, session):
 
 async def get_last_node(elem):
     """
-        Return le dernier noeud d'un élément. Utile quand ledit dernier noeud n'a pas de nom
+        Return le dernier noeud d'un élément. Utile quand ledit dernier noeud n'a pas de nom.
     """
     last = ""
     for node in elem:
         last = node.string
     return last if last else ""
 
-async def get_episode(session, *params):
-    """Return le lien de l'épisode choisi."""
-    raise NotImplementedError
+async def get_episode(session, anime_name, num_season, num_episode = 0):
+    """Return le lien de l'épisode souhaité."""
+    soup = await make_soup(session, WEB_SITE + 'anime')
+    for anime_link in soup.find_all('a'):
+        for anime_title in anime_link.find_all(attrs='anime-titre'):
+            if anime_name.lower() == anime_title.string.lower():
+                if await get_last_node(anime_link.select(".licencie")) == "Licencié":
+                    raise AnimeNotFree
+                reply = await found_episode(session, anime_link.get('href'), num_season, num_episode)
+                return reply
+    raise AnimeNotFound
+
+
+async def found_episode(session, url, num_season, num_episode):
+    """
+        Cherche le lien de l'épisode cherché et le return.
+    """
+    soup = await make_soup(session, WEB_SITE + url)
+    season = 1
+    episode_with_season = 1
+    episode_without_season = 1
+    for saison_link in soup.find_all('div', attrs={'class': 'streaming-block'}):
+        for saison_name in saison_link.find('h3', attrs={'class': 'streaming-title'}):
+            episode_without_season = 1
+            for episode_list in saison_link.find_all('a'):
+                if (str(season) == str(num_season) and str(episode_with_season) == str(num_episode)) \
+                        or (str(episode_without_season) == str(num_season) and str(num_episode) == 0):
+                    return episode_list['href']
+                else:
+                    episode_with_season += 1
+                    episode_without_season += 1
+            season += 1
+        raise IndexError
+
 
 async def get_anime_after_search(session, *search):
     """Return une liste d'anime répondant à search."""
@@ -128,15 +161,14 @@ async def get_instructions(*t):
     """Return les différentes instructions du module ainsi que leur descripiton et comment les utiliser."""
     return f"""Pour avoir les informations sur un anime : info, 'nom_de_l_anime'
 -> exemple : info 'Clannad'
-Pour obtenir un épisode particulier : episod, 'nom_de_l_anime', num_episode
--> exemple : TODO
-Pour effectuer une recherche : search, type_de_recherche(genre/auteur), valeurs_recherchées
--> exemple : TODO"""
-
+Pour obtenir un épisode particulier : episode, 'nom_de_l_anime', num_saison(fac), num_episode
+-> exemple : episode, "Elfen Lied", 1, 4
+Pour effectuer une recherche selon genre (très lent) : search, valeurs_recherchées
+-> exemple : search "comédie" "amour et amitié" """
 
 request = {
     "info": get_informations,
-    "episod": get_episode,
+    "episode": get_episode,
     "search": get_anime_after_search,
     "help": get_instructions
 }

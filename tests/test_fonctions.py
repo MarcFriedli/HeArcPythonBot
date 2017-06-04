@@ -5,7 +5,32 @@ from animebot import anime_functions
 import pytest
 import aiohttp
 
+@pytest.mark.asyncio
+async def test_if_get_episode_with_season_and_episode_return_the_right_link():
+    async with aiohttp.ClientSession() as session:
+        reply = await anime_functions.get_episode(session, "Elfen LieD", 1, 9)
+    assert reply == "http://neko-san.fr/streaming/elfen-lied-09-vostfr"
 
+@pytest.mark.asyncio
+async def test_if_get_episode_with_only_episode_reutnr_the_right_link():
+    async with aiohttp.ClientSession() as session:
+        reply = await anime_functions.get_episode(session, "Elfen LieD", 9)
+    assert reply == "http://neko-san.fr/streaming/elfen-lied-09-vostfr"
+
+@pytest.mark.asyncio
+async def test_if_get_episode_with_an_licencied_episode_dosent_return_a_link():
+    async with aiohttp.ClientSession() as session:
+        reply = await anime_functions.get_episode(session, "Angel Beats!", 1, 4)
+    assert reply == "Cet animé est déjà licencié. Soutenez-le en l'achetant."
+
+@pytest.mark.asyncio
+async def test_if_get_episode_with_an_inexisting_espisode_dosent_work():
+    async with aiohttp.ClientSession() as session:
+        reply = await anime_functions.get_episode(session, "Elfen Lied", 1, 17)
+    assert reply == "Cet épisode n'existe pas."
+
+
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_if_get_anime_after_search_with_inexisting_types_raise_an_exception():
     async with aiohttp.ClientSession() as session:
@@ -15,6 +40,7 @@ async def test_if_get_anime_after_search_with_inexisting_types_raise_an_exceptio
             assert True
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_if_get_anime_after_search_with_too_much_types_found_nothing():
     async with aiohttp.ClientSession() as session:
@@ -30,6 +56,7 @@ async def test_if_get_anime_after_search_work():
     assert reply == "Les animés suivants correspondent à votre recherche : Bokusatsu Tenshi Dokuro-chan"
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_if_is_type_existing_found_existings_types():
     async with aiohttp.ClientSession() as session:
@@ -40,6 +67,7 @@ async def test_if_is_type_existing_found_existings_types():
             return False
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_if_is_type_raise_a_TypeNotFound_exeption_with_an_inexisting_type():
     async with aiohttp.ClientSession() as session:
@@ -50,6 +78,7 @@ async def test_if_is_type_raise_a_TypeNotFound_exeption_with_an_inexisting_type(
             assert True
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_if_get_resume_work():
     """Vérification que le résumé soit le bon..."""
@@ -64,6 +93,7 @@ async def test_if_get_resume_work():
                                                             "cachent elles-mêmes un très lourd secret à ce sujet…"
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_if_get_anime_type_work():
     """Vérification que lorsqu'on passe un paramètre, on trouve les bons genres"""
@@ -72,7 +102,7 @@ async def test_if_get_anime_type_work():
         assert reply.lower() == "sport"
 
 
-# TODO : simplifier ce truc...
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_if_get_last_node_return_the_right_node():
     async with aiohttp.ClientSession() as session:
