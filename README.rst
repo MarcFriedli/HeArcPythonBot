@@ -33,7 +33,7 @@ Instructions
 
 Installation et utilisation
 ----------------------------
-1. pip install requirement.txt
+1. python3 -m pip install -U https://https://github.com/MarcFriedli/HeArcPythonBot
 
 2. crée un fichier config.ini
 
